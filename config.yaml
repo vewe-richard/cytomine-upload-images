@@ -8,10 +8,10 @@ host: https://ap-demo-core.labflow.ai/
 upload_host: https://ap-demo-upload.labflow.ai/
 
 # cat configs/core/cytomineconfig.groovy | grep adminPublicKey
-admin_public_key: 36dfd7b7-d09f-4c93-9592-d19d9cf10ca6
+admin_public_key: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 
 # cat configs/core/cytomineconfig.groovy | grep adminPrivateKey
-admin_private_key: da206cf1-5c01-41ed-994e-577de113d2a0
+admin_private_key: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 
 # Default is blank 
 id_project: 

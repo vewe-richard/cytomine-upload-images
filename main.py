@@ -1,6 +1,4 @@
 import fnmatch
-import platform
-import signal
 import time
 import yaml
 import logging
@@ -17,13 +15,13 @@ _configs = {}
 
 
 def readconfig():
-    with open(os.getcwd() + '/config.yaml') as f:
+    with open(os.getcwd() + '/config.txt') as f:
         try:
             data = yaml.load(f, Loader=yaml.FullLoader)
             return data
         except Exception as e:
             logger.error(e)
-            logger.error("config.yaml file format error")
+            logger.error("config.txt file format error")
             exit(1)
 
 
@@ -78,7 +76,7 @@ if __name__ == '__main__':
 
     # Check inputs
     if not os.path.exists(_configs["filepath"]):
-        logger.error(_configs["filepath"] + " does not exist, please check config.yaml")
+        logger.error(_configs["filepath"] + " does not exist, please check config.txt")
         exit(1)
     logger.info("image path: {}".format(_configs["filepath"]))
     image_types = get_image_types(_configs["image_types"])

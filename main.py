@@ -1,4 +1,7 @@
 import fnmatch
+
+import shutil
+
 import time
 import yaml
 import logging
@@ -26,11 +29,12 @@ def readconfig():
 
 
 def get_one_image(imagetype):
-    for dirPath, dirNames, filenames in os.walk(_configs["filepath"]):
+    for dirPath, dirNames, filenames in os.walk(_configs["upload_filepath"]):
+        if len(os.listdir(dirPath)) == 0 and len(dirPath) > len(_configs["upload_filepath"]):
+            os.rmdir(dirPath)
         for fileName in filenames:
             if fnmatch.fnmatch(fileName, '*.' + imagetype):
-                if not fnmatch.filter(filenames, fileName + ".uploaded"):
-                    return dirPath, fileName
+                return dirPath, fileName
     return None, None
 
 
@@ -65,25 +69,32 @@ def upload_image(dir_path, file_name, storage):
             return False
 
 
-def create_uploaded_tag(dir_path, file_name):
-    source_filepath = dir_path + '/' + file_name
-    uploaded_prove_filepath = source_filepath + ".uploaded"
-    open(uploaded_prove_filepath, "w").close()
+def move_file(dir_path, file_name, upload_filepath,uploaded_filepath):
+    now_filepath = dir_path + '/' + file_name
+    new_filepath = uploaded_filepath + '/' + dir_path.replace(upload_filepath, '') + '/'
+    if not os.path.exists(new_filepath):
+        os.makedirs(new_filepath)
+    if os.path.exists(new_filepath + file_name):
+        os.remove(new_filepath + file_name)
+    shutil.move(now_filepath, new_filepath)
 
 
 if __name__ == '__main__':
     _configs = readconfig()
 
     # Check inputs
-    if not os.path.exists(_configs["filepath"]):
-        logger.error(_configs["filepath"] + " does not exist, please check config.txt")
+    if not os.path.exists(_configs["upload_filepath"]):
+        logger.error(_configs["upload_filepath"] + " does not exist, please check config.txt")
         exit(1)
-    logger.info("image path: {}".format(_configs["filepath"]))
+    if not os.path.exists(_configs["uploaded_filepath"]):
+        logger.error(_configs["uploaded_filepath"] + " does not exist, please check config.txt")
+        exit(1)
+    logger.info("image path: {}".format(_configs["upload_filepath"]))
     image_types = get_image_types(_configs["image_types"])
     logger.info("image types: {}".format(image_types))
 
     with Cytomine(host=_configs["host"], public_key=_configs["admin_public_key"],
-              private_key=_configs["admin_private_key"]) as cytomine:
+                  private_key=_configs["admin_private_key"]) as cytomine:
         # Check that the given project exists
         if _configs["id_project"]:
             project = Project().fetch(_configs["id_project"])
@@ -95,14 +106,14 @@ if __name__ == '__main__':
         storages = StorageCollection().fetch()
         my_storage = next(filter(lambda storage: storage.user == cytomine.current_user.id, storages))
         if not my_storage:
-                logger.info("storage is not exist")
-                exit(1)
-
-    for imgtype in image_types:
-        while True:
+            logger.info("storage is not exist")
+            exit(1)
+    while True:
+        for imgtype in image_types:
             dirpath, filename = get_one_image(imgtype)
             if filename is None:
-                break
+                time.sleep(2)
+                continue
             logger.info("  uploading {}{} ...".format(dirpath, filename))
 
             status = is_file_changing(dirpath, filename)
@@ -110,9 +121,6 @@ if __name__ == '__main__':
                 logger.info("wait for file {} updating ...".format(filename))
                 time.sleep(1)
                 continue
-
             if upload_image(dirpath, filename, my_storage):
-                create_uploaded_tag(dirpath, filename)
-
-    logger.info("all images are uploaded!!!")
+                move_file(dirpath, filename , _configs["upload_filepath"], _configs["uploaded_filepath"])
 

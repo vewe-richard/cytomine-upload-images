@@ -1,6 +1,7 @@
 # path to the directory where images are located
 # For Windows: it's like  D:\images\
-filepath: images/
+upload_filepath: upload\
+uploaded_filepath: uploaded\
 image_types: png,jpg
 
 # sites 
